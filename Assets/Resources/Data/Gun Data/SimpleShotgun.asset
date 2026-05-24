@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f97e6427afd992041ae47ab22724945e, type: 3}
+  m_Name: SimpleShotgun
+  m_EditorClassIdentifier: 
+  damage: 1
+  damageType: 1
+  coolDown: 0.6
+  spread: 3
+  shots: 10
+  automaticAction: 0
+  useAmmo: 1
+  startingMagazineAmmoCount: 7
+  maxMagazineAmmoCount: 7
+  startingBoxAmmoCount: 20
+  maxBoxAmmoCount: 40
+  reloadTime: 0.35
+  manualReload: 1
+  progressiveReloadInterruption: 1
+  ammoType: 2
+  useZoom: 0
+  zoomTime: 0.15
+  zoomedFieldOfView: 15
+  zoomMovementModifier: 1
+  zoomLookModifier: 1
+  momentumRecoil: 1.5
+  aimRecoil: 1.5
+  muzzleVelocity: 50
+  bulletPrefab: {fileID: 1552996330619193922, guid: 61614e4c9eb07364fbad373e5993ef00,
+    type: 3}
+  muzzleOffset: {x: 0, y: 0, z: 0}
+  firingEffectsPrefab: {fileID: 5381237789843640210, guid: 8e8b419cca0449744b8099af1bac32f0,
+    type: 3}
+  firingEffectsOffset: {x: -0.3, y: 0.065, z: 0}
+  fireSound: {fileID: 11400000, guid: 181318f761dec4840b3157bbb1a0b390, type: 2}
+  reloadSound: {fileID: 11400000, guid: b2a3adbee89715b4b9a863e5efc3fee2, type: 2}
+  usePooledBullets: 0
+  poolIdentifier: 
+  poolSize: 0
