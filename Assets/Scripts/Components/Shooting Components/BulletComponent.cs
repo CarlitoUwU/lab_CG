@@ -21,7 +21,8 @@ using UnityEngine;
 // This class is responsible for managing a single bullet, and moving it and destroying it when it
 // collides, spawning the appropriate effects or decals
 //##################################################################################################
-public class BulletComponent : MonoBehaviour {
+public class BulletComponent : MonoBehaviour
+{
     public const int NO_BULLET_COLLIDE_LAYER = 1 << 11;
 
     public const float BULLET_EFFECTS_OFFSET = 0.1f;
@@ -31,7 +32,8 @@ public class BulletComponent : MonoBehaviour {
     public float maxDistance = 100.0f;
     public float gravityModifier = 0.0f;
     public int collisions = 1;
-    public enum CollisionMode {
+    public enum CollisionMode
+    {
         Ricochet, Pierce
     }
     public CollisionMode collisionMode;
@@ -61,10 +63,12 @@ public class BulletComponent : MonoBehaviour {
     //##############################################################################################
     // Try to register this bullet's damageable delegate if possible
     //##############################################################################################
-    private void Start(){
+    private void Start()
+    {
         // If the bullet has a damageable on it, register to get onKilled notifications
         // This if for things like rockets that can be shot and destroyed mid-air
-        if(TryGetComponent(out DamageableComponent damageable)){
+        if (TryGetComponent(out DamageableComponent damageable))
+        {
             damageable.killedDelegates.Register(OnBulletKilled);
         }
     }
@@ -73,8 +77,10 @@ public class BulletComponent : MonoBehaviour {
     // The endpoint for external scripts to register a delegate that gets called when this bullet
     // is destroyed
     //##############################################################################################
-    public void RegisterOnBulletDestroyedDelegate(OnBulletDestroyed d){
-        if(bulletDestroyedDelegates == null){
+    public void RegisterOnBulletDestroyedDelegate(OnBulletDestroyed d)
+    {
+        if (bulletDestroyedDelegates == null)
+        {
             bulletDestroyedDelegates = new List<OnBulletDestroyed>();
         }
 
@@ -87,29 +93,23 @@ public class BulletComponent : MonoBehaviour {
     // for destruction next update.
     // This is done in Fixed Update so that the physics is properly synchronized for the bullet.
     //##############################################################################################
-    void FixedUpdate(){
-        // Prevents updating before firing information has been provided, since fixed update is
-        // disjoint from regular unity update
-        if(!fired){
+    void FixedUpdate()
+    {
+        if (!fired)
             return;
-        }
 
-        // The destruction is done 1 frame after being marked for kill so the bullet and effects
-        // appear in the correct position visually for that last frame, before bullet is destroyed.
-        if(shouldKill){
-            // Notify all delegates
-            if(bulletDestroyedDelegates != null){
-                foreach(OnBulletDestroyed bulletDestroyedDelegate in bulletDestroyedDelegates){
+        if (shouldKill)
+        {
+            if (bulletDestroyedDelegates != null)
+            {
+                foreach (OnBulletDestroyed bulletDestroyedDelegate in bulletDestroyedDelegates)
                     bulletDestroyedDelegate();
-                }
             }
 
-            // Destroy if not pooled, otherwise mark this bullet as freed
-            if(poolIdentifier == null){
+            if (poolIdentifier == null)
                 Destroy(gameObject);
-            } else {
+            else
                 PooledGameObjectManager.FreeInstanceToPool(poolIdentifier, gameObject);
-            }
 
             return;
         }
@@ -118,93 +118,101 @@ public class BulletComponent : MonoBehaviour {
         Vector3 move = velocity * Time.deltaTime;
         float moveDist = move.magnitude;
 
-        // Kill the bullet if it's gone too far
-        if((transform.position - startPosition).sqrMagnitude >= maxDistance * maxDistance){
+        if ((transform.position - startPosition).sqrMagnitude >= maxDistance * maxDistance)
             shouldKill = true;
-        }
 
-        // See if move would hit anything, ignoring the 'no bullet collide' layer and triggers
         RaycastHit hit;
-        if(Physics.Raycast(transform.position, move, out hit, moveDist, ~NO_BULLET_COLLIDE_LAYER, QueryTriggerInteraction.Ignore)){
-            if(hit.collider.gameObject != firer){
+        if (Physics.Raycast(transform.position, move, out hit, moveDist, ~NO_BULLET_COLLIDE_LAYER, QueryTriggerInteraction.Ignore))
+        {
+            // Ignorar impactos en el propio jugador y sus hijos
+            bool hitSelf = hit.collider.gameObject == firer ||
+                           hit.collider.transform.IsChildOf(firer.transform);
+
+            if (!hitSelf)
+            {
                 transform.position = hit.point;
 
-                DamageableComponent damageable =hit.collider.GetComponentInParent<DamageableComponent>();
+                DamageableComponent damageable = hit.collider.GetComponentInParent<DamageableComponent>();
 
-                if (damageable == null){
+                if (damageable == null)
+                {
                     DamageablePieceComponent damageablePiece = hit.collider.gameObject.GetComponent<DamageablePieceComponent>();
-
-                    if(damageablePiece != null){
+                    if (damageablePiece != null)
                         damageable = damageablePiece.GetDamageableComponent();
-                    }
                 }
 
                 if (damageable != null)
                 {
-
-                    // Never ricochet off a damageable
                     collisionsRemaining = 0;
 
-                    // Detectar si el collider golpeado es una cabeza
-                    HeadshotComponent headshot =
-                        hit.collider.gameObject.GetComponent<HeadshotComponent>();
+                    // Buscar HeadshotComponent primero en el collider directo
+                    HeadshotComponent headshot = hit.collider.gameObject.GetComponent<HeadshotComponent>();
+
+                    // Si no est√° en el collider directo, buscar en hijos del damageable
+                    if (headshot == null)
+                    {
+                        HeadshotComponent[] headshotsInEnemy = damageable.GetComponentsInChildren<HeadshotComponent>();
+                        float closestDist = float.MaxValue;
+
+                        foreach (HeadshotComponent hs in headshotsInEnemy)
+                        {
+                            float dist = Vector3.Distance(hit.point, hs.transform.position);
+                            if (dist < closestDist)
+                            {
+                                closestDist = dist;
+                                headshot = hs; // ‚Üê AQU√ç estaba el bug: nunca se asignaba
+                            }
+                        }
+
+                        // Umbral: si el impacto est√° a m√°s de 1 unidad de la cabeza, no es headshot
+                        if (closestDist > 1.0f)
+                            headshot = null;
+                    }
 
                     if (headshot != null)
                     {
-
-                        Debug.Log("HEADSHOT!");
-
-                        // Slow motion
+                        Debug.Log("HEADSHOT en: " + hit.collider.gameObject.name);
                         StartCoroutine(HeadshotSlowMotion());
-
-                        // DaÒo crÌtico (matar instant·neamente)
-                        damageable.DealDamage(
-                            damageable.maxHealth,
-                            type,
-                            startPosition,
-                            firer
-                        );
-
+                        damageable.DealDamage(damageable.maxHealth, type, startPosition, firer);
                     }
                     else
                     {
-
-                        // DaÒo normal
-                        damageable.DealDamage(
-                            damage,
-                            type,
-                            startPosition,
-                            firer
-                        );
+                        damageable.DealDamage(damage, type, startPosition, firer);
                     }
                 }
 
-                // Play impact sound if needed
-                if (impactSound != null){
+                if (impactSound != null)
                     SoundManagerComponent.PlaySound(impactSound, gameObject);
-                }
 
-                if(collisionsRemaining > 0){
+                if (collisionsRemaining > 0)
+                {
                     collisionsRemaining--;
 
-                    if(Random.value <= collisionModeChance){
-                        if(collisionMode == CollisionMode.Ricochet){
+                    if (Random.value <= collisionModeChance)
+                    {
+                        if (collisionMode == CollisionMode.Ricochet)
+                        {
                             float velocityMagnitude = velocity.magnitude;
                             velocity = Vector3.Reflect(velocity.normalized, hit.normal).normalized * velocityMagnitude;
                             transform.position = hit.point + (velocity * 0.01f);
-                        } else if(collisionMode == CollisionMode.Pierce){
+                        }
+                        else if (collisionMode == CollisionMode.Pierce)
+                        {
                             transform.position += move;
                         }
-                    } else {
+                    }
+                    else
+                    {
                         collisionsRemaining = 0;
                     }
                 }
 
-                if(collisionsRemaining <= 0){
+                if (collisionsRemaining <= 0)
                     shouldKill = true;
-                }
             }
-        } else {
+        }
+        else
+        {
             transform.position += move;
         }
     }
@@ -212,7 +220,8 @@ public class BulletComponent : MonoBehaviour {
     //##############################################################################################
     // Notify the bullet it's been fired, with the provided characteristics
     //##############################################################################################
-    public void Fire(float damage_, DamageType type_, Vector3 velocity_, GameObject firer_){
+    public void Fire(float damage_, DamageType type_, Vector3 velocity_, GameObject firer_)
+    {
         fired = true;
         shouldKill = false;
         collisionsRemaining = collisions;
@@ -228,11 +237,13 @@ public class BulletComponent : MonoBehaviour {
     //##############################################################################################
     // If the bullet has a damageable and is killed, trigger the fx and mark it for destruction
     //##############################################################################################
-    public void OnBulletKilled(DamageableComponent damageable){
+    public void OnBulletKilled(DamageableComponent damageable)
+    {
         shouldKill = true;
 
         // Spawn effects in place, because they will now no longer get spawned via collision
-        if(optionalImpactEffects != null){
+        if (optionalImpactEffects != null)
+        {
             GameObject fx = GameObject.Instantiate(optionalImpactEffects);
             fx.transform.position = transform.position;
         }
@@ -242,7 +253,8 @@ public class BulletComponent : MonoBehaviour {
     // Mark the bullet as being a pooled bullet instance, and give it the identifier for pool
     // operations
     //##############################################################################################
-    public void SetAsPooled(string identifier){
+    public void SetAsPooled(string identifier)
+    {
         poolIdentifier = identifier;
     }
 

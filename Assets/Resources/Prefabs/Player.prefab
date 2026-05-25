@@ -886,6 +886,7 @@ GameObject:
   - component: {fileID: 433277578}
   - component: {fileID: 6740197393165697558}
   - component: {fileID: 1857886432818715581}
+  - component: {fileID: 8029287341960683195}
   m_Layer: 8
   m_Name: Player
   m_TagString: Player
@@ -1206,11 +1207,41 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   firstPersonCamera: {fileID: 8118486971543315907}
   thirdPersonCamera: {fileID: 109979363308986789}
+  playerModel: {fileID: 0}
   thirdPersonDistance: 4
   thirdPersonHeight: 1.5
   followSmoothing: 5
   toggleKey: 118
-  hud: {fileID: 3109857597277872578}
+  normalFOV: 60
+  zoomedFOV: 30
+  zoomSpeed: 5
+  zoomKey: 324
+--- !u!114 &8029287341960683195
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4891807089415746347}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a75459f2d6b13da4f8ba1710559a08e2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  firstPersonCamera: {fileID: 8118486971543315907}
+  thirdPersonCamera: {fileID: 109979363308986789}
+  playerModel: {fileID: 5565676004833094432}
+  gunTransform: {fileID: 7165162339503176399}
+  fadeImage: {fileID: 8372026921362142281}
+  cameraToggle: {fileID: 1857886432818715581}
+  slowMotionScale: 0.2
+  slowMotionDuration: 1
+  fallDuration: 0.8
+  thirdPersonDelay: 0.6
+  fadeDuration: 1
+  gunFallSpeed: 3
+  gunRotateSpeed: 180
+  bodyFallAngle: 85
 --- !u!1 &5056856965410796791
 GameObject:
   m_ObjectHideFlags: 0
@@ -1926,6 +1957,12 @@ PrefabInstance:
 --- !u!4 &5077404483706532250 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: b3f21a3b3e8cf0c4d9720d85e8581794,
+    type: 3}
+  m_PrefabInstance: {fileID: 4754720418633406065}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &5565676004833094432 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: b3f21a3b3e8cf0c4d9720d85e8581794,
     type: 3}
   m_PrefabInstance: {fileID: 4754720418633406065}
   m_PrefabAsset: {fileID: 0}
