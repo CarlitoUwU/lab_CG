@@ -21,7 +21,7 @@ MonoBehaviour:
   useAmmo: 1
   startingMagazineAmmoCount: 5
   maxMagazineAmmoCount: 5
-  startingBoxAmmoCount: 10
+  startingBoxAmmoCount: 15
   maxBoxAmmoCount: 25
   reloadTime: 2
   manualReload: 1

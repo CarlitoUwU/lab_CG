@@ -13,7 +13,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 //##################################################################################################
 
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -26,7 +26,9 @@ using UnityStandardAssets.ImageEffects;
 // movement and looking, and taking damage and respawning.
 //##################################################################################################
 [RequireComponent(typeof(DamageableComponent))]
-public class FirstPersonPlayerComponent : MonoBehaviour {
+public class FirstPersonPlayerComponent : MonoBehaviour
+{
+
     public static FirstPersonPlayerComponent player;
 
     public const float MAX_ANGLE_DELTA = 50.0f;
@@ -87,7 +89,8 @@ public class FirstPersonPlayerComponent : MonoBehaviour {
     private CharacterController character;
     private DamageableComponent damage;
 
-    public enum RespawnState {
+    public enum RespawnState
+    {
         Alive,
         Dying,
         Respawning,
@@ -109,10 +112,14 @@ public class FirstPersonPlayerComponent : MonoBehaviour {
 
     private float footstepTimeRemaining = FOOTSTEP_TIME;
 
+    [Header("Animation Setup")]
+    public Animator animator;
+
     //##############################################################################################
     // Setup the player, and collect the different components that will get used.
     //##############################################################################################
-	void Start(){
+    void Start()
+    {
         player = this;
         respawnState = RespawnState.Alive;
 
@@ -139,44 +146,55 @@ public class FirstPersonPlayerComponent : MonoBehaviour {
         recoilDecayTimer = new Timer();
         jumpTimer = new Timer(jumpTime);
         sideJumpCooldownTimer = new Timer(SIDE_JUMP_COOLDOWN_TIME);
-	}
+    }
 
     //##############################################################################################
     // The core update look. Basically, update respawn and safe position always.
     // If they're enabled and therefore allowed, update looking and movement.
     //##############################################################################################
-	void Update(){
+    void Update()
+    {
         UpdateRespawn();
 
-        if(lookingEnabled){
+        if (lookingEnabled)
+        {
             UpdateLook();
         }
 
-        if(movementEnabled){
+        if (movementEnabled)
+        {
             UpdateMovement();
         }
 
         UpdateSafePosition();
-	}
+    }
 
     //##############################################################################################
     // Either fade out if dead, or teleport then fade in if respawning.
     //##############################################################################################
-    void UpdateRespawn(){
-        if(respawnState == RespawnState.Dying || respawnState == RespawnState.Respawning){
+    void UpdateRespawn()
+    {
+        if (respawnState == RespawnState.Dying || respawnState == RespawnState.Respawning)
+        {
 
             float t = respawnTimer.Parameterized();
 
-            if(fade != null){
-                if(respawnState == RespawnState.Dying){
+            if (fade != null)
+            {
+                if (respawnState == RespawnState.Dying)
+                {
                     fade.color = new Color(0.0f, 0.0f, 0.0f, t);
-                } else {
+                }
+                else
+                {
                     fade.color = new Color(0.0f, 0.0f, 0.0f, 1.0f - t);
                 }
             }
 
-            if(respawnTimer.Finished()){
-                if(respawnState == RespawnState.Dying){
+            if (respawnTimer.Finished())
+            {
+                if (respawnState == RespawnState.Dying)
+                {
                     respawnTimer.Start();
                     respawnState = RespawnState.Respawning;
 
@@ -186,12 +204,15 @@ public class FirstPersonPlayerComponent : MonoBehaviour {
                     // SaveLoadManagerComponent.Instance().Save();
 
                     PlayerRespawnVolumeComponent currentRespawn = PlayerRespawnVolumeComponent.GetCurrentRespawn();
-                    if(currentRespawn){
+                    if (currentRespawn)
+                    {
                         transform.position = currentRespawn.respawnPosition.transform.position;
 
                         playerCamera.transform.localRotation = currentRespawn.transform.rotation;
                         playerInputLookRotation = currentRespawn.transform.rotation;
-                    } else {
+                    }
+                    else
+                    {
                         // In case there's no respawn point, teleport the player up a bunch.
                         transform.position = new Vector3(0.0f, transform.position.y + PLAYER_RESPAWN_HEIGHT_OFFSET, 0.0f);
 
@@ -230,7 +251,9 @@ public class FirstPersonPlayerComponent : MonoBehaviour {
                     lookingEnabled = true;
 
                     damage.Respawn();
-                } else {
+                }
+                else
+                {
                     respawnState = RespawnState.Alive;
                 }
             }
@@ -240,14 +263,19 @@ public class FirstPersonPlayerComponent : MonoBehaviour {
     //##############################################################################################
     // Update the look direction based on the mouse input, camera shake amount, and recoil
     //##############################################################################################
-    void UpdateLook(){
+    void UpdateLook()
+    {
         float totalModifier = 1.0f;
 
         // Make sure to purge null modifiers to cleanup up destroyed, dangling references
-        foreach(var idAndModifier in lookModifiers){
-            if(idAndModifier.Key != null){
+        foreach (var idAndModifier in lookModifiers)
+        {
+            if (idAndModifier.Key != null)
+            {
                 totalModifier *= idAndModifier.Value;
-            } else {
+            }
+            else
+            {
                 speedModifiers.Remove(idAndModifier.Key);
             }
         }
@@ -268,12 +296,14 @@ public class FirstPersonPlayerComponent : MonoBehaviour {
         float lookPitch = lookPitchPrevious + yInput;
 
         // Apply recoil
-        if(recoilAmount > 0.0f){
+        if (recoilAmount > 0.0f)
+        {
             float recoilT = 1.0f - recoilDecayTimer.Parameterized();
 
             lookPitch -= recoilAmount * recoilT * Time.deltaTime;
 
-            if(recoilDecayTimer.Finished()){
+            if (recoilDecayTimer.Finished())
+            {
                 recoilAmount = 0.0f;
             }
         }
@@ -290,9 +320,12 @@ public class FirstPersonPlayerComponent : MonoBehaviour {
 
         bool inUpperQuadrant = lookPitchPrevious > 180.0f;
 
-        if(lookPitch < UPPER_PITCH && inUpperQuadrant){
+        if (lookPitch < UPPER_PITCH && inUpperQuadrant)
+        {
             lookPitch = UPPER_PITCH;
-        } else if(lookPitch > LOWER_PITCH && !inUpperQuadrant){
+        }
+        else if (lookPitch > LOWER_PITCH && !inUpperQuadrant)
+        {
             lookPitch = LOWER_PITCH;
         }
 
@@ -305,7 +338,8 @@ public class FirstPersonPlayerComponent : MonoBehaviour {
         // Calculate and apply the camera shake
         Quaternion shakeOffsetRotation = Quaternion.identity;
 
-        if(shakeAmount > 0.0f){
+        if (shakeAmount > 0.0f)
+        {
             float t = 1.0f - shakeDecayTimer.Parameterized();
             t = Mathf.Sin(t * Mathf.PI);
 
@@ -317,7 +351,8 @@ public class FirstPersonPlayerComponent : MonoBehaviour {
 
             shakeOffsetRotation = Quaternion.LookRotation(shakeOffset);
 
-            if(shakeDecayTimer.Finished()){
+            if (shakeDecayTimer.Finished())
+            {
                 shakeAmount = 0.0f;
             }
         }
@@ -330,8 +365,10 @@ public class FirstPersonPlayerComponent : MonoBehaviour {
     //##############################################################################################
     // Gather inputs, get intended movement direction, and try to move there.
     //##############################################################################################
-    void UpdateMovement(){
-        if(!character.enabled){
+    void UpdateMovement()
+    {
+        if (!character.enabled)
+        {
             return;
         }
 
@@ -344,23 +381,35 @@ public class FirstPersonPlayerComponent : MonoBehaviour {
         right.y = 0.0f;
         right.Normalize();
 
+        // Variables locales para simular el movimiento en los ejes del Animator
+        float horizontal = 0.0f;
+        float vertical = 0.0f;
+
         // Multiple if's so that the inputs can be combined, so there's not a single input
         Vector3 movementVector = Vector3.zero;
 
-        if(Input.GetKey(KeyCode.W)){
+        if (Input.GetKey(KeyCode.W))
+        {
             movementVector += forward;
+            vertical += 1.0f; // Avanzar
         }
 
-        if(Input.GetKey(KeyCode.A)){
+        if (Input.GetKey(KeyCode.A))
+        {
             movementVector -= right;
+            horizontal -= 1.0f; // Izquierda
         }
 
-        if(Input.GetKey(KeyCode.S)){
+        if (Input.GetKey(KeyCode.S))
+        {
             movementVector -= forward;
+            vertical -= 1.0f; // Retroceder
         }
 
-        if(Input.GetKey(KeyCode.D)){
+        if (Input.GetKey(KeyCode.D))
+        {
             movementVector += right;
+            horizontal += 1.0f; // Derecha
         }
 
         movementVector.Normalize();
@@ -375,53 +424,95 @@ public class FirstPersonPlayerComponent : MonoBehaviour {
 
         // Add jump velocity when space is pressed and grounded
         // Apply jump until space is released or timer expires
-        if(jumpingEnabled && Input.GetKey(KeyCode.Space)){
-            if(character.isGrounded /*|| (character.collisionFlags == CollisionFlags.Sides && sideJumpCooldownTimer.Finished())*/){ // This allows wall-jumping after a short time after the previous jump. Might be too intense for this game?
+        if (jumpingEnabled && Input.GetKey(KeyCode.Space))
+        {
+            if (character.isGrounded /*|| (character.collisionFlags == CollisionFlags.Sides && sideJumpCooldownTimer.Finished())*/)
+            { // This allows wall-jumping after a short time after the previous jump. Might be too intense for this game?
                 jumpTimer.Start();
 
-                if(character.collisionFlags == CollisionFlags.Sides){
+                if (character.collisionFlags == CollisionFlags.Sides)
+                {
                     sideJumpCooldownTimer.Start();
                 }
             }
 
-            if(!jumpTimer.Finished()){
+            if (!jumpTimer.Finished())
+            {
                 velocity.y = jumpVelocity;
             }
         }
 
-        if(character.isGrounded){
+        if (character.isGrounded)
+        {
             sideJumpCooldownTimer.SetParameterized(1.0f);
         }
 
         float totalModifier = 1.0f;
 
         // Make sure to purge null modifiers to cleanup up destroyed, dangling references
-        foreach(var idAndModifier in speedModifiers){
-            if(idAndModifier.Key != null){
+        foreach (var idAndModifier in speedModifiers)
+        {
+            if (idAndModifier.Key != null)
+            {
                 totalModifier *= idAndModifier.Value;
-            } else {
+            }
+            else
+            {
                 speedModifiers.Remove(idAndModifier.Key);
             }
         }
 
-        if(!Dead()){
+        if (!Dead())
+        {
             character.Move(velocity * totalModifier * Time.deltaTime);
 
-            if(character.isGrounded && playerFootstepBarkComponent != null){
+            // ====================================================================
+            // NUEVO: ENVIAR VELOCIDADES CALCULADAS AL ANIMATOR DEL SWAT
+            // ====================================================================
+            if (animator != null)
+            {
+                // Enviamos los valores simulados directamente al Blend Tree sin usar Input.GetAxis
+                animator.SetFloat("VelocityX", horizontal);
+                animator.SetFloat("VelocityZ", vertical);
+            }
+            // ====================================================================
+
+            if (character.isGrounded && playerFootstepBarkComponent != null)
+            {
                 float footstepMultiplier = velocity.magnitude / maxWalkSpeed;
                 footstepTimeRemaining -= (footstepMultiplier * Time.deltaTime);
 
-                if(footstepTimeRemaining < 0.0f){
+                if (footstepTimeRemaining < 0.0f)
+                {
                     playerFootstepBarkComponent.Bark();
                     footstepTimeRemaining = FOOTSTEP_TIME;
                 }
             }
         }
 
-        if(character.isGrounded){
+        if (character.isGrounded)
+        {
             velocity.y = -1.0f;
-        } else {
+        }
+        else
+        {
             velocity.y += Physics.gravity.y * Time.deltaTime;
+        }
+
+        // Rotar el modelo Swat según la dirección de la cámara
+        if (animator != null)
+        {
+            Vector3 swatForward = playerCamera.transform.forward;
+            swatForward.y = 0f;
+            if (swatForward != Vector3.zero)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(swatForward);
+                animator.transform.rotation = Quaternion.Lerp(
+                    animator.transform.rotation,
+                    targetRotation,
+                    Time.deltaTime * 10f  // 10 = velocidad de giro, ajústalo al gusto
+                );
+            }
         }
     }
 
@@ -430,8 +521,10 @@ public class FirstPersonPlayerComponent : MonoBehaviour {
     // when a player drops items on death, and we don't want to spawn that when they fall down a
     // pit.
     //##############################################################################################
-    void UpdateSafePosition(){
-        if(!Dead() && safeTimer.Finished() && character.isGrounded){
+    void UpdateSafePosition()
+    {
+        if (!Dead() && safeTimer.Finished() && character.isGrounded)
+        {
             lastSafePosition = transform.position;
             safeTimer.Start();
         }
@@ -440,7 +533,8 @@ public class FirstPersonPlayerComponent : MonoBehaviour {
     //##############################################################################################
     // Add both movement and camera look recoil to the player
     //##############################################################################################
-    public void AddGunRecoil(GunComponent gun){
+    public void AddGunRecoil(GunComponent gun)
+    {
         // Momentum Recoil
         Vector3 forward = playerCamera.transform.forward;
         forward.y = 0.0f;
@@ -466,7 +560,7 @@ public class FirstPersonPlayerComponent : MonoBehaviour {
     //##############################################################################################
     // Add a Camera shake with an amount, scaled by distance, and start the decay timer.
     //##############################################################################################
-    #if UNITY_EDITOR
+#if UNITY_EDITOR
     [ContextMenu("Test Small Camera Shake")]
     void TestSmallCameraShake(){
         AddCameraShake(0.5f, transform.position);
@@ -481,14 +575,16 @@ public class FirstPersonPlayerComponent : MonoBehaviour {
     void TestLargeCameraShake(){
         AddCameraShake(5.0f, transform.position);
     }
-    #endif // UNITY_EDITOR
+#endif // UNITY_EDITOR
 
-    public void AddCameraShake(float amount, Vector3 origin){
+    public void AddCameraShake(float amount, Vector3 origin)
+    {
         float distance = (transform.position - origin).magnitude;
         float t = Mathf.Abs(SHAKE_FAR_DISTANCE - distance) / (SHAKE_FAR_DISTANCE - SHAKE_NEAR_DISTANCE);
         t = Mathf.Clamp(t, 0.0f, 1.0f);
 
-        if(t > 0.0f){
+        if (t > 0.0f)
+        {
             shakeAmount += (t * amount);
             shakeDecayTimer.Start();
         }
@@ -497,8 +593,10 @@ public class FirstPersonPlayerComponent : MonoBehaviour {
     //##############################################################################################
     // When damaged, play a pseudo-random grunt or big oof
     //##############################################################################################
-    public void OnDamaged(DamageableComponent damage){
-        if(playerHurtBarkComponent != null){
+    public void OnDamaged(DamageableComponent damage)
+    {
+        if (playerHurtBarkComponent != null)
+        {
             playerHurtBarkComponent.Bark();
         }
     }
@@ -506,7 +604,8 @@ public class FirstPersonPlayerComponent : MonoBehaviour {
     //##############################################################################################
     // On killed, disable features and set state.
     //##############################################################################################
-    public void OnKilled(DamageableComponent damage){
+    public void OnKilled(DamageableComponent damage)
+    {
         respawnState = RespawnState.Dying;
         respawnTimer.Start();
 
@@ -524,51 +623,66 @@ public class FirstPersonPlayerComponent : MonoBehaviour {
     //##############################################################################################
     // Simple setters and getters
     //##############################################################################################
-    public void SetVelocity(Vector3 newVelocity){
+    public void SetVelocity(Vector3 newVelocity)
+    {
         velocity = newVelocity;
     }
 
-    public Vector3 GetVelocity(){
+    public Vector3 GetVelocity()
+    {
         return velocity;
     }
 
-    public float GetMaxWalkSpeed(){
+    public float GetMaxWalkSpeed()
+    {
         return maxWalkSpeed;
     }
 
-    public bool Dead(){
+    public bool Dead()
+    {
         return damage.Dead();
     }
 
-    public void AbleMovement(bool abled){
+    public void AbleMovement(bool abled)
+    {
         movementEnabled = abled;
 
-        if(!abled){
+        if (!abled)
+        {
             // Make sure to clear out velocity
             velocity = Vector3.zero;
         }
     }
 
-    public void AbleLooking(bool abled){
+    public void AbleLooking(bool abled)
+    {
         lookingEnabled = abled;
     }
 
     //##############################################################################################
     // Add or remove a speed modifier. These are identified by the game object
     //##############################################################################################
-    public void AddSpeedModifier(GameObject id, float modifier){
-        if(!speedModifiers.ContainsKey(id)){
+    public void AddSpeedModifier(GameObject id, float modifier)
+    {
+        if (!speedModifiers.ContainsKey(id))
+        {
             speedModifiers.Add(id, modifier);
-        } else {
+        }
+        else
+        {
             // Edit the speed if it does exist
             speedModifiers[id] = modifier;
         }
     }
 
-    public void RemoveSpeedModifier(GameObject id){
-        if(speedModifiers.ContainsKey(id)){
+    public void RemoveSpeedModifier(GameObject id)
+    {
+        if (speedModifiers.ContainsKey(id))
+        {
             speedModifiers.Remove(id);
-        } else {
+        }
+        else
+        {
             Logger.Error("Trying to remove speed modifier " + id + ", but does not exist");
         }
     }
@@ -576,19 +690,27 @@ public class FirstPersonPlayerComponent : MonoBehaviour {
     //##############################################################################################
     // Add or remove a look modifier. These are identified by the game object
     //##############################################################################################
-    public void AddLookModifier(GameObject id, float modifier){
-        if(!lookModifiers.ContainsKey(id)){
+    public void AddLookModifier(GameObject id, float modifier)
+    {
+        if (!lookModifiers.ContainsKey(id))
+        {
             lookModifiers.Add(id, modifier);
-        } else {
+        }
+        else
+        {
             // Edit the look if it does exist
             lookModifiers[id] = modifier;
         }
     }
 
-    public void RemoveLookModifier(GameObject id){
-        if(lookModifiers.ContainsKey(id)){
+    public void RemoveLookModifier(GameObject id)
+    {
+        if (lookModifiers.ContainsKey(id))
+        {
             lookModifiers.Remove(id);
-        } else {
+        }
+        else
+        {
             Logger.Error("Trying to remove look modifier " + id + ", but does not exist");
         }
     }
