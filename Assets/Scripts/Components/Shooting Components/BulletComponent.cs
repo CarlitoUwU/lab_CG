@@ -172,7 +172,13 @@ public class BulletComponent : MonoBehaviour
                     if (headshot != null)
                     {
                         Debug.Log("HEADSHOT en: " + hit.collider.gameObject.name);
-                        StartCoroutine(HeadshotSlowMotion());
+                        MonoBehaviour firerMono = firer.GetComponent<MonoBehaviour>();
+                        if (firerMono != null)
+                        {
+                            // Dirección de la bala en el momento del impacto
+                            Vector3 bulletDir = velocity.normalized;
+                            firerMono.StartCoroutine(HeadshotSlowMotion(hit.point, bulletDir));
+                        }
                         damageable.DealDamage(damageable.maxHealth, type, startPosition, firer);
                     }
                     else
@@ -258,16 +264,85 @@ public class BulletComponent : MonoBehaviour
         poolIdentifier = identifier;
     }
 
-    private System.Collections.IEnumerator HeadshotSlowMotion()
+    private System.Collections.IEnumerator HeadshotSlowMotion(Vector3 hitPoint, Vector3 bulletDirection)
     {
+        Camera mainCam = Camera.main;
+
+        Camera headshotCam = null;
+        foreach (Camera cam in Resources.FindObjectsOfTypeAll<Camera>())
+        {
+            if (cam.CompareTag("HeadshotCam"))
+            {
+                headshotCam = cam;
+                break;
+            }
+        }
+
+        if (headshotCam == null)
+        {
+            Debug.LogWarning("HeadshotCamera no encontrada!");
+            yield break;
+        }
+
+        Vector3 behindBulletPos = hitPoint - bulletDirection.normalized * 1.2f + Vector3.up * 0.1f;
+
+        headshotCam.fieldOfView = mainCam.fieldOfView;
+        headshotCam.transform.position = mainCam.transform.position;
+        headshotCam.transform.rotation = mainCam.transform.rotation;
+
+        mainCam.enabled = false;
+        headshotCam.gameObject.SetActive(true);
 
         Time.timeScale = 0.15f;
         Time.fixedDeltaTime = 0.02f * Time.timeScale;
 
-        yield return new WaitForSecondsRealtime(0.5f);
+        float elapsed = 0f;
+        float travelDuration = 0.4f;
+        float originalFOV = mainCam.fieldOfView;
+
+        Vector3 startPos = headshotCam.transform.position;
+        Quaternion startRot = headshotCam.transform.rotation;
+
+        while (elapsed < travelDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, elapsed / travelDuration);
+
+            headshotCam.transform.position = Vector3.Lerp(startPos, behindBulletPos, t);
+            headshotCam.transform.LookAt(hitPoint);
+            headshotCam.fieldOfView = Mathf.Lerp(originalFOV, originalFOV * 0.55f, t);
+
+            yield return null;
+        }
+        yield return new WaitForSecondsRealtime(0.3f);
 
         Time.timeScale = 1.0f;
         Time.fixedDeltaTime = 0.02f;
+
+        elapsed = 0f;
+        float returnDuration = 0.35f;
+
+        Vector3 snapPos = headshotCam.transform.position;
+        Quaternion snapRot = headshotCam.transform.rotation;
+        float snapFOV = headshotCam.fieldOfView;
+
+        Vector3 returnPos = mainCam.transform.position;
+        Quaternion returnRot = mainCam.transform.rotation;
+
+        while (elapsed < returnDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = Mathf.SmoothStep(0f, 1f, elapsed / returnDuration);
+
+            headshotCam.transform.position = Vector3.Lerp(snapPos, returnPos, t);
+            headshotCam.transform.rotation = Quaternion.Slerp(snapRot, returnRot, t);
+            headshotCam.fieldOfView = Mathf.Lerp(snapFOV, originalFOV, t);
+
+            yield return null;
+        }
+
+        headshotCam.gameObject.SetActive(false);
+        mainCam.enabled = true;
     }
 
 }
